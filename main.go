@@ -1,18 +1,14 @@
 package main
 
 import (
-	"io"
 	"net/http"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 )
-
-var db, _ = gorm.Open("mysql", "root:root@/flip?charset=utf8&parseTime=True&loc=Local")
 
 type TodoItemModel struct {
 	Id          int `gorm:"primary_key"`
@@ -20,28 +16,21 @@ type TodoItemModel struct {
 	Completed   bool
 }
 
-func status(w http.ResponseWriter, r *http.Request) {
-	log.Info("API Status is OK")
-	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, `{"alive": true}`)
-} // status
-
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetReportCaller(true)
 } // init
 
 func main() {
-	// Close our database connection when our main() function is returned.
-	defer db.Close()
+	// TODO: Run locally
+	// port := "8000"
 
-	db.Debug().DropTableIfExists(&TodoItemModel{})
-	db.Debug().AutoMigrate(&TodoItemModel{})
+	// TODO: For production
+	port := os.Getenv("PORT")
 
 	// This is our router... similar to Laravel and Django ain't it?
 	router := mux.NewRouter()
-	router.HandleFunc("/status", status).Methods("GET")
-	router.HandleFunc("/crawl", flips).Methods("GET")
+	router.HandleFunc("/crawl", freeItems).Methods("GET")
 	router.HandleFunc("/gas", average_regular_gas_price).Methods("GET")
 
 	// Wrapping CORS handler around our existing application.
@@ -50,6 +39,6 @@ func main() {
 	}).Handler(router)
 
 	// Start the Server and listen on port 80
-	http.ListenAndServe(":8000", handler)
+	http.ListenAndServe(":"+port, handler)
 	log.Info("Flip Server Started!")
 } // main

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gocolly/colly"
 	log "github.com/sirupsen/logrus"
@@ -138,7 +139,11 @@ func filterOffers(posts []Post) []Post {
 	return ans
 } // filterOffers
 
-func flips(w http.ResponseWriter, r *http.Request) {
+func freeItems(w http.ResponseWriter, r *http.Request) {
+	// Can someone inject malicious query params from this?
+	var town string = strings.ToTitle(r.URL.Query().Get("town"))
+	var state_symbol string = strings.ToUpper(r.URL.Query().Get("state_symbol"))
+
 	// Instantiate default collector
 	freeCycleCollector := colly.NewCollector()
 
@@ -162,13 +167,11 @@ func flips(w http.ResponseWriter, r *http.Request) {
 		// Fileter Posts for only "Offers"
 		var filt_posts = filterOffers(freecycle.Posts)
 
-		// Store db.Create(&freecycle.Posts)
-
-		// Respond with Post JSON
+		// Respond with JSON
 		log.Info("API's Crawler has a response!")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(filt_posts)
 	})
 
-	freeCycleCollector.Visit("https://www.freecycle.org/town/PoughkeepsieNY")
+	freeCycleCollector.Visit("https://www.freecycle.org/town/" + town + state_symbol)
 } // flips
